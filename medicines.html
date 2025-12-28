@@ -9,21 +9,19 @@
       background-color: #f0f8f7;
       padding: 30px;
     }
-    h2 {
-      color: #00796b;
-    }
+    h2 { color: #00796b; }
     input[type="text"] {
       padding: 10px;
       width: 300px;
       font-size: 16px;
-      border: 1px solid #ccc;
       border-radius: 4px;
+      border: 1px solid #ccc;
     }
     button {
       padding: 10px 15px;
       font-size: 16px;
       background-color: #00796b;
-      color: white;
+      color: #fff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -45,139 +43,89 @@
       border-left: 5px solid #ffc107;
       border-radius: 4px;
     }
-    .back-link {
-      margin-bottom: 20px;
-    }
-    .back-link a {
-      color: #00796b;
-      text-decoration: none;
-      font-weight: bold;
-    }
   </style>
 </head>
+
 <body>
 
-  <div class="back-link">
-    <a href="dashboard.html">← Back to Dashboard</a>
-  </div>
+<h2>🔍 Search for Medicine Information</h2>
+<input type="text" id="medicineInput" placeholder="Enter medicine name">
+<button onclick="searchMedicine()">Search</button>
 
-  <h2>🔍 Search for Medicine Information</h2>
-  <input type="text" id="medicineInput" placeholder="Enter medicine name">
-  <button onclick="searchMedicine()">Search</button>
+<div id="result"></div>
 
-  <div id="result"></div>
+<div id="disclaimer">
+⚠️ Information is fetched from a public drug database.
+Always consult a doctor before using any medicine.
+</div>
 
-  <div id="disclaimer">
-    ⚠️ <strong>Disclaimer:</strong> The information provided here is based on personal knowledge and research. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical concerns.
-  </div>
+<script>
+/* -------- Helper function (Solution 1) -------- */
+function simplify(text) {
+  if (!text) return "Information not available.";
+  return text
+    .replace(/\n/g, " ")
+    .split(".")
+    .slice(0, 2)
+    .join(".")
+    .trim() + ".";
+}
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+/* -------- Main search function -------- */
+async function searchMedicine() {
+  const name = document.getElementById("medicineInput").value.trim();
+  const result = document.getElementById("result");
 
-  <script>
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyDVZNBKutvRFrQOFQunVgSBwJFLMvrct0Q",
-      authDomain: "aayuh-c9a87.firebaseapp.com",
-      projectId: "aayuh-c9a87",
-      storageBucket: "aayuh-c9a87.firebasestorage.app",
-      messagingSenderId: "459370049467",
-      appId: "1:459370049467:web:4354a11c6b43d3f6dede9e",
-      measurementId: "G-GNFKCBES0L"
-    };
+  if (!name) {
+    result.innerHTML = "❌ Please enter a medicine name.";
+    return;
+  }
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+  result.innerHTML = "🔄 Fetching medicine information...";
 
-    // Check authentication
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = "index.html";
-      }
-    });
+  try {
+    const response = await fetch(
+      `https://api.fda.gov/drug/label.json?search=${encodeURIComponent(name)}&limit=1`
+    );
 
-    const medicineDatabase = {
-      "paracetamol": {
-        name: "Paracetamol",
-        use: "Pain relief and fever reduction",
-        dosage: "500mg every 4–6 hours",
-        timing: "After meals, every 4–6 hours as needed",
-        sideEffects: "Nausea, rash, liver damage (if overdosed)"
-      },
-      "amoxicillin": {
-        name: "Amoxicillin",
-        use: "Antibiotic for bacterial infections",
-        dosage: "250–500mg every 8 hours",
-        timing: "Before meals, three times a day",
-        sideEffects: "Diarrhea, allergic reactions"
-      },
-      "cetirizine": {
-        name: "Cetirizine",
-        use: "Allergy relief (antihistamine)",
-        dosage: "10mg once daily",
-        timing: "At night, once daily",
-        sideEffects: "Drowsiness, dry mouth"
-      },
-      "ibuprofen": {
-        name: "Ibuprofen",
-        use: "Pain relief, inflammation reduction",
-        dosage: "200–400mg every 6–8 hours",
-        timing: "After meals, every 6–8 hours",
-        sideEffects: "Stomach upset, dizziness"
-      },
-      "metformin": {
-        name: "Metformin",
-        use: "Type 2 diabetes management",
-        dosage: "500–1000mg twice daily",
-        timing: "With breakfast and dinner",
-        sideEffects: "Nausea, diarrhea, vitamin B12 deficiency"
-      },
-      "omeprazole": {
-        name: "Omeprazole",
-        use: "Acid reflux and ulcers",
-        dosage: "20mg once daily before meals",
-        timing: "30 minutes before breakfast",
-        sideEffects: "Headache, abdominal pain"
-      },
-      "saridon": {
-        name: "Saridon",
-        use: "Headache relief",
-        dosage: "Max 3 tablets in 24 hours",
-        timing: "Take after food",
-        sideEffects: "Mild stomach upset, nervousness, sleep difficulty"
-      }
-    };
+    if (!response.ok) throw new Error();
 
-    // Check for search parameter from dashboard
-    window.addEventListener('DOMContentLoaded', function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const searchParam = urlParams.get('search');
-      if (searchParam) {
-        document.getElementById('medicineInput').value = searchParam;
-        searchMedicine();
-      }
-    });
+    const data = await response.json();
+    const med = data.results[0];
 
-    function searchMedicine() {
-      const input = document.getElementById("medicineInput").value.toLowerCase().trim();
-      const resultDiv = document.getElementById("result");
+    // Simplified official data (Solution 1)
+    const use = simplify(med.indications_and_usage?.[0]);
+    const dosage = simplify(med.dosage_and_administration?.[0]);
+    const sideEffects = simplify(med.adverse_reactions?.[0]);
 
-      if (medicineDatabase[input]) {
-        const med = medicineDatabase[input];
-        resultDiv.innerHTML = `
-          <h3>${med.name}</h3>
-          <p><strong>Use:</strong> ${med.use}</p>
-          <p><strong>Dosage:</strong> ${med.dosage}</p>
-          <p><strong>Timing:</strong> ${med.timing}</p>
-          <p><strong>Side Effects:</strong> ${med.sideEffects}</p>
-        `;
-      } else {
-        resultDiv.innerHTML = `<p>❌ Medicine not found. Please check the spelling or try another name.</p>`;
-      }
-    }
-  </script>
+    // Simple explanation (Solution 2)
+    const simpleExplanation = `
+      This medicine is commonly used to treat the condition mentioned above.
+      Take it only in the recommended dose.
+      If you feel discomfort or unusual symptoms, stop using it and consult a doctor.
+    `;
+
+    result.innerHTML = `
+      <h3>${med.openfda?.generic_name?.[0] || name}</h3>
+      <p><strong>Use:</strong> ${use}</p>
+      <p><strong>Dosage:</strong> ${dosage}</p>
+      <p><strong>Timing:</strong> As advised by a healthcare professional.</p>
+      <p><strong>Side Effects:</strong> ${sideEffects}</p>
+
+      <hr>
+      <p><strong>🧠 Simple Explanation:</strong><br>
+      ${simpleExplanation}</p>
+    `;
+
+  } catch {
+    result.innerHTML = `
+      ❌ Medicine information not found.<br>
+      Please try a common generic name (example: paracetamol, ibuprofen).
+    `;
+  }
+}
+</script>
+
 
 </body>
 </html>
