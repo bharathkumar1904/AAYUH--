@@ -9,7 +9,9 @@
       background-color: #f0f8f7;
       padding: 30px;
     }
-    h2 { color: #00796b; }
+    h2 {
+      color: #00796b;
+    }
     input[type="text"] {
       padding: 10px;
       width: 300px;
@@ -55,23 +57,66 @@
 <div id="result"></div>
 
 <div id="disclaimer">
-⚠️ Information is fetched from a public drug database.
+⚠️ Information is fetched from a public drug database.  
+This is for educational purposes only.  
 Always consult a doctor before using any medicine.
 </div>
 
 <script>
-/* -------- Helper function (Solution 1) -------- */
+/* ---------- Simplify long medical text ---------- */
 function simplify(text) {
   if (!text) return "Information not available.";
-  return text
-    .replace(/\n/g, " ")
-    .split(".")
-    .slice(0, 2)
-    .join(".")
-    .trim() + ".";
+  return text.replace(/\n/g, " ").split(".").slice(0, 2).join(".") + ".";
 }
 
-/* -------- Main search function -------- */
+/* ---------- Smart timing + simple explanation ---------- */
+function getSimpleUsage(medicineName) {
+  const name = medicineName.toLowerCase();
+
+  if (name.includes("paracetamol")) {
+    return {
+      timing: "After food, every 4–6 hours if needed",
+      explanation:
+        "Used to reduce fever and body pain. Take one tablet after meals. Do not take more than 4 tablets in a day."
+    };
+  }
+
+  if (name.includes("ibuprofen")) {
+    return {
+      timing: "After food, every 6–8 hours",
+      explanation:
+        "Helps reduce pain and swelling. Always take after food to avoid stomach problems."
+    };
+  }
+
+  if (name.includes("cetirizine")  name.includes("levocetirizine")) {
+    return {
+      timing: "Once daily at night",
+      explanation:
+        "Used for allergy symptoms like sneezing or itching. May cause sleepiness, so take it at night."
+    };
+  }
+
+  if (
+    name.includes("amoxicillin") 
+    name.includes("azithromycin") 
+    name.includes("antibiotic")
+  ) {
+    return {
+      timing: "Morning and night, at fixed times",
+      explanation:
+        "Antibiotic medicine. Take it at the same time every day and complete the full course even if you feel better."
+    };
+  }
+
+  return {
+    timing: "After food, as advised by a doctor",
+    explanation:
+      "Take this medicine only as prescribed by a healthcare professional."
+  };
+}
+
+/* ---------- Main API search function ---------- */
 async function searchMedicine() {
   const name = document.getElementById("medicineInput").value.trim();
   const result = document.getElementById("result");
@@ -93,39 +138,34 @@ async function searchMedicine() {
     const data = await response.json();
     const med = data.results[0];
 
-    // Simplified official data (Solution 1)
     const use = simplify(med.indications_and_usage?.[0]);
     const dosage = simplify(med.dosage_and_administration?.[0]);
     const sideEffects = simplify(med.adverse_reactions?.[0]);
 
-    // Simple explanation (Solution 2)
-    const simpleExplanation = `
-      This medicine is commonly used to treat the condition mentioned above.
-      Take it only in the recommended dose.
-      If you feel discomfort or unusual symptoms, stop using it and consult a doctor.
-    `;
+    const simple = getSimpleUsage(name);
 
     result.innerHTML = `
-      <h3>${med.openfda?.generic_name?.[0] || name}</h3>
+      <h3>${med.openfda?.generic_name?.[0]  name}</h3>
+
       <p><strong>Use:</strong> ${use}</p>
-      <p><strong>Dosage:</strong> ${dosage}</p>
-      <p><strong>Timing:</strong> As advised by a healthcare professional.</p>
+<p><strong>⏰ Timing:</strong> ${simple.timing}</p>
+
       <p><strong>Side Effects:</strong> ${sideEffects}</p>
 
       <hr>
-      <p><strong>🧠 Simple Explanation:</strong><br>
-      ${simpleExplanation}</p>
-    `;
 
+      <p><strong>🧠 Simple Explanation:</strong><br>
+      ${simple.explanation}</p>
+    `;
   } catch {
     result.innerHTML = `
       ❌ Medicine information not found.<br>
-      Please try a common generic name (example: paracetamol, ibuprofen).
+      Please try common names like <b>paracetamol</b>, <b>ibuprofen</b>, or <b>cetirizine</b>.
     `;
   }
 }
 </script>
 
-
 </body>
 </html>
+      <p><strong>Dosage:</strong> ${dosage}</p>
