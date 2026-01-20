@@ -1,7 +1,7 @@
 {
   "name": "AAYUH! - Your Health Companion",
   "short_name": "AAYUH",
-  "start_url": "/index.html",
+  "start_url": "/splash.html",
   "display": "standalone",
   "background_color": "#00796b",
   "theme_color": "#00796b",
